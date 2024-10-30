@@ -10,6 +10,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
 $testDirectory = '../data/tests/';
 $tests = array_diff(scandir($testDirectory), ['..', '.']);
 
+// Подключение к базе данных
+require '../db.php';
+
+// Получение количества попыток для каждого теста
+$testAttempts = [];
+foreach ($tests as $testFile) {
+    $testId = pathinfo($testFile, PATHINFO_FILENAME); // Предполагается, что имя файла соответствует test_id
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_attempts WHERE test_id = ?");
+    $stmt->execute([$testId]);
+    $testAttempts[$testFile] = $stmt->fetchColumn();
+}
 ?>
 
 <!DOCTYPE html>
@@ -24,13 +35,13 @@ $tests = array_diff(scandir($testDirectory), ['..', '.']);
     <div class="manage-tests-container">
         <h2>Управление тестами</h2>
         
-        <!-- Список доступных тестов -->
+        <!-- Список доступных тестов с количеством попыток -->
         <h3>Существующие тесты</h3>
         <ul>
             <?php foreach ($tests as $testFile): ?>
                 <li>
                     <a href="edit_test.php?file=<?= urlencode($testFile) ?>">
-                        <?= htmlspecialchars($testFile) ?>
+                        <?= htmlspecialchars($testFile) ?> (Попыток: <?= $testAttempts[$testFile] ?? 0 ?>)
                     </a>
                 </li>
             <?php endforeach; ?>

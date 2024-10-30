@@ -7,14 +7,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['test_id']) || !isset($_SES
     exit;
 }
 
-// Получаем данные о тесте
 $userId = $_SESSION['user_id'];
 $testId = $_SESSION['test_id'];
 $startTime = $_SESSION['start_time'];
 $endTime = time();
 $totalTime = $endTime - $startTime;
 
-// Подсчитываем результаты
 $totalQuestions = count($_SESSION['questions']);
 $correctAnswers = 0;
 
@@ -25,11 +23,16 @@ foreach ($_SESSION['answers'] as $answerData) {
 }
 
 $scorePercentage = ($correctAnswers / $totalQuestions) * 100;
-$passingScore = $_SESSION['passing_score'] ?? 50;  // Порог прохождения из JSON
+$passingScore = $_SESSION['passing_score'] ?? 50;
 $isPassed = $scorePercentage >= $passingScore;
 
-// Сохраняем результат в базу данных
-$stmt = $pdo->prepare("INSERT INTO test_results (user_id, test_id, start_time, end_time, total_time, correct_answers, total_questions, score, passed) VALUES (:user_id, :test_id, :start_time, :end_time, :total_time, :correct_answers, :total_questions, :score, :passed)");
+// Сохранение попытки в таблице user_attempts
+$stmt = $pdo->prepare("INSERT INTO user_attempts (user_id, test_id, score) VALUES (?, ?, ?)");
+$stmt->execute([$userId, $testId, $scorePercentage]);
+
+// Сохранение полной записи результата в таблице test_results
+$stmt = $pdo->prepare("INSERT INTO test_results (user_id, test_id, start_time, end_time, total_time, correct_answers, total_questions, score, passed) 
+                       VALUES (:user_id, :test_id, :start_time, :end_time, :total_time, :correct_answers, :total_questions, :score, :passed)");
 $stmt->execute([
     'user_id' => $userId,
     'test_id' => $testId,
@@ -42,9 +45,14 @@ $stmt->execute([
     'passed' => $isPassed ? 1 : 0
 ]);
 
+// Обновляем статус в user_test_access как `completed`
+$stmt = $pdo->prepare("UPDATE user_test_access SET completed = TRUE WHERE user_id = ? AND test_id = ?");
+$stmt->execute([$userId, $testId]);
+
 // Очищаем сессию теста после завершения
 unset($_SESSION['questions'], $_SESSION['current_question'], $_SESSION['answers'], $_SESSION['start_time'], $_SESSION['test_id'], $_SESSION['test_title']);
 ?>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
