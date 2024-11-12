@@ -15,6 +15,20 @@ $stmt = $pdo->prepare("SELECT ua.user_id, ua.test_id, ua.score, ua.attempt_date,
                        ORDER BY ua.attempt_date DESC");
 $stmt->execute();
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+function saveUserAnswer($username, $test_id, $question_id, $answer) {
+    global $pdo;
+    
+    // Сохранение ответа пользователя
+    $stmt = $pdo->prepare("INSERT INTO user_answers (username, test_id, question_id, answer, answer_time) 
+                           VALUES (:username, :test_id, :question_id, :answer, NOW())");
+    $stmt->execute([
+        'username' => $username,
+        'test_id' => $test_id,
+        'question_id' => $question_id,
+        'answer' => $answer
+    ]);
+}
 ?>
 
 <!DOCTYPE html>
@@ -62,7 +76,7 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p>Результаты тестов отсутствуют.</p>
         <?php endif; ?>
         
-        <a href="../admin.php">Назад к панели администратора</a>
+        <a href="../admin/admin.php">Назад к панели администратора</a>
     </div>
 </body>
 </html>

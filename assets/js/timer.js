@@ -1,17 +1,47 @@
-// timer.js
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таймер</title>
+</head>
+<body>
+    <!-- Таймер с временем в секундах, установленным через data-time -->
+    <div id="timer" data-time="300"></div>
 
-let timeLeft = parseInt(document.getElementById('timer').getAttribute('data-time'), 10);
-const timerDisplay = document.getElementById('timer');
+    <script>
+        // timer.js
 
-const countdown = setInterval(() => {
-    if (timeLeft <= 0) {
-        clearInterval(countdown);
-        alert("Время теста истекло!");
-        document.getElementById("test-form").submit(); // Отправляем форму, завершив тест
-    } else {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        timerDisplay.innerText = `Оставшееся время: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        timeLeft--;
-    }
-}, 1000);
+        // Начальное время в секундах, например 300 секунд = 5 минут
+        let timeLeft = parseInt(document.getElementById('timer').getAttribute('data-time'), 10);
+        const timerDisplay = document.getElementById('timer');
+
+        // Функция для форматирования времени в MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+
+        // Отображение начального значения таймера
+        timerDisplay.textContent = `Оставшееся время: ${formatTime(timeLeft)}`;
+
+        // Обратный отсчёт
+        const countdown = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerDisplay.textContent = "Время истекло!";
+                timerDisplay.style.color = "#e63946";  // Меняем цвет текста на красный
+                alert("Время теста истекло!");
+            } else {
+                timeLeft--;
+                timerDisplay.textContent = `Оставшееся время: ${formatTime(timeLeft)}`;
+
+                // Мигание последних 10 секунд
+                if (timeLeft <= 10) {
+                    timerDisplay.style.color = timeLeft % 2 === 0 ? "#e63946" : "#333";
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
