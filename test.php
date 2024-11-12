@@ -24,7 +24,7 @@ if (!$testId) {
     exit;
 }
 
-// Проверка, что тест доступен и не завершен
+// Проверка доступа и статуса теста
 $stmt = $pdo->prepare("SELECT access_level, completed FROM user_test_access WHERE user_id = :user_id AND test_id = :test_id");
 $stmt->execute(['user_id' => $userId, 'test_id' => $testId]);
 $access = $stmt->fetch();
@@ -43,17 +43,79 @@ if (!file_exists($testFilePath)) {
 
 // Загрузка теста из JSON файла
 $testData = json_decode(file_get_contents($testFilePath), true);
-$timeLimit = $testData['time_limit'];
-$totalQuestions = $testData['display_questions'];
+$timeLimit = $testData['time_limit']; // Время в секундах
+
+// Инициализация времени начала теста в сессии
+if (!isset($_SESSION['start_time'])) {
+    $_SESSION['start_time'] = time();
+}
+
+// Вычисляем оставшееся время
+$elapsedTime = time() - $_SESSION['start_time'];
+$remainingTime = $timeLimit - $elapsedTime;
+
+// Если время истекло, перенаправляем на страницу результатов
+if ($remainingTime <= 0) {
+    header('Location: results.php');
+    exit;
+}
 
 // Инициализация теста
 if (!isset($_SESSION['questions']) || $_SESSION['test_id'] != $testId) {
     $questions = $testData['questions'];
     shuffle($questions);
-    $_SESSION['questions'] = array_slice($questions, 0, $totalQuestions);
+    $_SESSION['questions'] = array_slice($questions, 0, $testData['display_questions']);
     $_SESSION['current_question'] = 0;
-    $_SESSION['start_time'] = time();
+    $_SESSION['answers'] = [];
     $_SESSION['test_id'] = $testId;
+}
+
+// Функция для сохранения ответа пользователя
+function saveUserAnswer($userId, $testId, $questionId, $answer, $isCorrect) {
+    global $pdo;
+
+    $stmt = $pdo->prepare("INSERT INTO user_answers (user_id, test_id, question_id, answer, is_correct, answer_time) 
+                           VALUES (:user_id, :test_id, :question_id, :answer, :is_correct, NOW())");
+    $stmt->execute([
+        'user_id' => $userId,
+        'test_id' => $testId,
+        'question_id' => $questionId,
+        'answer' => json_encode($answer),
+        'is_correct' => $isCorrect
+    ]);
+}
+
+// Обработка отправки ответа
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $currentQuestionIndex = $_SESSION['current_question'];
+    $question = $_SESSION['questions'][$currentQuestionIndex] ?? null;
+
+    if ($question) {
+        $userAnswer = $_POST['answer'] ?? [];
+        $correctAnswer = $question['correct'] ?? [];
+
+        $isCorrect = ($question['type'] === 'multiple')
+            ? empty(array_diff($userAnswer, $correctAnswer)) && empty(array_diff($correctAnswer, $userAnswer))
+            : in_array($userAnswer[0], $correctAnswer);
+
+        // Сохраняем ответ в сессии и базе данных
+        $_SESSION['answers'][$currentQuestionIndex] = [
+            'answer' => $userAnswer,
+            'correct' => $isCorrect
+        ];
+
+        saveUserAnswer($userId, $testId, $question['id'], $userAnswer, $isCorrect);
+
+        // Переход к следующему вопросу или завершение теста
+        $_SESSION['current_question']++;
+        if ($_SESSION['current_question'] >= count($_SESSION['questions'])) {
+            header('Location: results.php');
+            exit;
+        } else {
+            header("Location: test.php?test_id=" . urlencode($testId));
+            exit;
+        }
+    }
 }
 ?>
 
@@ -64,22 +126,37 @@ if (!isset($_SESSION['questions']) || $_SESSION['test_id'] != $testId) {
     <title>Тестирование: <?= htmlspecialchars($testId) ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script>
-        let timeLeft = <?= $timeLimit ?>;
-        setInterval(function() {
-            if (timeLeft <= 0) {
-                alert("Время теста истекло!");
-                window.location.href = "results.php";
-            } else {
-                timeLeft--;
-                document.getElementById("timer").innerText = "Оставшееся время: " + timeLeft + " сек";
-            }
-        }, 1000);
+        let timeLeft = <?= $remainingTime ?>;
+
+        // Функция для форматирования времени в MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+
+        // Установка начального значения таймера в формате MM:SS
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("timer").innerText = "Оставшееся время: " + formatTime(timeLeft);
+
+            // Запуск обратного отсчета
+            const countdown = setInterval(function() {
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    alert("Время теста истекло!");
+                    window.location.href = "results.php";
+                } else {
+                    timeLeft--;
+                    document.getElementById("timer").innerText = "Оставшееся время: " + formatTime(timeLeft);
+                }
+            }, 1000);
+        });
     </script>
 </head>
 <body>
     <div class="test-container">
         <h2><?= htmlspecialchars($testId) ?></h2>
-        <p id="timer">Оставшееся время: <?= $timeLimit ?> сек</p>
+        <p id="timer">Оставшееся время: <?= floor($remainingTime / 60) ?>:<?= str_pad($remainingTime % 60, 2, '0', STR_PAD_LEFT) ?></p>
 
         <?php
         $currentQuestionIndex = $_SESSION['current_question'] ?? 0;
@@ -106,40 +183,3 @@ if (!isset($_SESSION['questions']) || $_SESSION['test_id'] != $testId) {
     </div>
 </body>
 </html>
-
-<?php
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_SESSION['questions'], $_SESSION['current_question'])) {
-        $currentQuestionIndex = $_SESSION['current_question'];
-        $question = $_SESSION['questions'][$currentQuestionIndex] ?? null;
-
-        if ($question) {
-            $userAnswer = $_POST['answer'] ?? [];
-            $correctAnswer = $question['correct'] ?? [];
-
-            $isCorrect = ($question['type'] === 'multiple')
-                ? empty(array_diff($userAnswer, $correctAnswer)) && empty(array_diff($correctAnswer, $userAnswer))
-                : in_array($userAnswer[0], $correctAnswer);
-
-            $_SESSION['answers'][$currentQuestionIndex] = [
-                'answer' => $userAnswer,
-                'correct' => $isCorrect
-            ];
-
-            $_SESSION['current_question']++;
-
-            if ($_SESSION['current_question'] >= count($_SESSION['questions'])) {
-                header('Location: results.php');
-                exit;
-            } else {
-                header("Location: test.php?test_id=" . urlencode($testId));
-                exit;
-            }
-        } else {
-            echo "Ошибка: текущий вопрос не найден.";
-        }
-    } else {
-        echo "Ошибка: вопросы не инициализированы.";
-    }
-}
-?>
