@@ -1,0 +1,22 @@
+<?php include 'db.php'; ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система записи</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Система записи</h1>
+        <p>Введите ваш табельный номер для входа:</p>
+        <form action="process.php" method="POST">
+            <label for="tab_number" class="hidden-label">Табельный номер:</label>
+            <input type="text" id="tab_number" name="tab_number" placeholder="Введите табельный номер" required>
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+</body>
+</html>
