@@ -1,0 +1,58 @@
+<?php
+// Подключение к базе данных MySQL
+$host = "localhost";  // Сервер базы данных
+$username = "your_username";  // Имя пользователя MySQL
+$password = "your_password";  // Пароль пользователя MySQL
+$database = "your_database";  // Имя базы данных
+
+$conn = new mysqli($host, $username, $password, $database);
+
+// Проверяем соединение
+if ($conn->connect_error) {
+    die("Ошибка соединения: " . $conn->connect_error);
+}
+
+$filePath = 'path_to_your_csv_file.csv'; // Укажите путь к вашему CSV файлу
+
+// Открываем CSV файл
+if (($handle = fopen($filePath, "r")) !== FALSE) {
+    // Пропускаем первую строку, если в ней заголовки
+    fgetcsv($handle);
+
+    // Чтение каждой строки CSV файла
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        // Читаем данные из строки (по колонкам)
+        $tb_nomer_me = $conn->real_escape_string($data[0]); // tb_nomer_me — это первый столбец
+        $fio = $conn->real_escape_string($data[1]);         // fio — это второй столбец
+        $shift = $conn->real_escape_string($data[2]);       // shift — это третий столбец
+        $department = $conn->real_escape_string($data[3]);  // department — это четвёртый столбец
+
+        // Проверка на наличие записи в базе данных
+        $checkQuery = "SELECT * FROM your_table_name WHERE tb_nomer_me = '$tb_nomer_me'";
+        $result = $conn->query($checkQuery);
+
+        // Если запись не найдена, добавляем её
+        if ($result->num_rows == 0) {
+            // SQL запрос для вставки данных
+            $insertQuery = "INSERT INTO your_table_name (tb_nomer_me, fio, shift, department) 
+                            VALUES ('$tb_nomer_me', '$fio', '$shift', '$department')";
+            
+            if ($conn->query($insertQuery)) {
+                echo "Запись успешно добавлена: $tb_nomer_me, $fio<br>";
+            } else {
+                echo "Ошибка при вставке данных: " . $conn->error;
+            }
+        } else {
+            // Если запись уже существует
+            echo "Запись с tb_nomer_me = $tb_nomer_me уже существует.<br>";
+        }
+    }
+
+    // Закрываем файл
+    fclose($handle);
+} else {
+    echo "Не удалось открыть файл.";
+}
+
+$conn->close();
+?>
