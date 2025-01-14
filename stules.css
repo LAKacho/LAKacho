@@ -73,7 +73,6 @@ header {
     opacity: 0; 
 }
 
-
 /* Таблица */
 .button-table {
     margin: 0 auto;
@@ -82,7 +81,16 @@ header {
 }
 
 .button-table td {
+    width: 200px;
+    height: 200px;
     text-align: center;
+    background-color: #d2691e; /* Цвет фона ячейки */
+    border-radius: 16px; /* Закругленные углы */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Тень для ячейки */
+    display: flex; /* Flexbox для центрирования содержимого */
+    justify-content: center;
+    align-items: center;
+    padding: 0;
 }
 
 /* Кнопки */
@@ -90,18 +98,16 @@ button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    background: linear-gradient(180deg, #d2691e, #d2691e);
+    justify-content: center;
+    background-color: transparent; /* Прозрачная кнопка */
     color: #ffffff;
     border: none;
-    padding: 20px; 
-    font-size: 24px;
-    border-radius: 16px;
+    padding: 0;
+    font-size: 16px;
     cursor: pointer;
+    width: 100%;
+    height: 100%; /* Кнопка заполняет всю ячейку */
     text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 180px; 
 }
 
 button:hover {
@@ -117,16 +123,15 @@ button:active {
 /* Картинки на кнопках */
 button img {
     max-height: 100px;
-    max-width: 100%;
+    max-width: 100px;
     margin-bottom: 10px;
 }
 
 /* Текст кнопки */
 button span {
-    font-size: 16px;
     color: #ffffff;
-    margin-top: 5px;
 }
+
 /* Поле ввода */
 .input {
     width: 100%;
@@ -160,4 +165,16 @@ button span {
 
 .button:active {
     background-color: #d2691e;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .button-table {
+        border-spacing: 20px; /* Уменьшаем расстояние между ячейками */
+    }
+
+    .button-table td {
+        width: 150px; /* Уменьшаем размер ячеек на мобильных устройствах */
+        height: 150px;
+    }
 }
