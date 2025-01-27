@@ -1,0 +1,29 @@
+nowDate = Date();
+date120DaysAgo = DateOffset(nowDate, -120 * 24 * 60 * 60);  // Дата 120 дней назад
+
+// Ищем тесты в таблице test_learning, у которых прошло больше 120 дней
+arrTests = XQuery("sql: \
+    SELECT assessment_id, person_id, last_usage_data \
+    FROM test_learning \
+    WHERE last_usage_data <= '" + date120DaysAgo + "' \
+");
+
+for (test in arrTests) {
+    try {
+        testID = test.assessment_id;
+        personID = test.person_id;
+        lastUsageDate = test.last_usage_data;
+
+        // Добавляем новый тест в active_test_learnings
+        var newTest = tools.active_test_learning.Add();
+        newTest.assessment_id = testID;
+        newTest.person_id = personID;
+        newTest.start_usage_date = nowDate;  // Устанавливаем новую дату назначения
+
+        newTest.Save();  // Сохраняем новую запись
+    } catch (err) {
+        // Обрабатываем ошибки, если они есть
+    }
+}
+
+alert(ArrayCount(arrTests));
