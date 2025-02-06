@@ -28,19 +28,20 @@ if ($result1->num_rows > 0) {
     // Очищаем таблицу перед новой записью
     $conn1->query("TRUNCATE TABLE dva");
 
-    $mail = new PHPMailer(true);
+    // Создаем объект PHPMailer, но временно не отправляем письма
+    //$mail = new PHPMailer(true);
 
-    try {
+    //try {
         // Настройки для отправки почты
-        $mail->isSMTP();
-        $mail->Host = 'ssl://smtp.yandex.ru';
-        $mail->SMTPAuth = true;
-        $mail->Username = ''; // Укажите ваш SMTP логин
-        $mail->Password = ''; // Укажите ваш SMTP пароль
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 465; 
-        $mail->setFrom('your_email@example.com', 'УЦ АТБ');
-        $mail->Subject = 'Уведомление о низкой оценке';
+        // $mail->isSMTP();
+        // $mail->Host = 'ssl://smtp.yandex.ru';
+        // $mail->SMTPAuth = true;
+        // $mail->Username = ''; // Укажите ваш SMTP логин
+        // $mail->Password = ''; // Укажите ваш SMTP пароль
+        // $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        // $mail->Port = 465; 
+        // $mail->setFrom('your_email@example.com', 'УЦ АТБ');
+        // $mail->Subject = 'Уведомление о низкой оценке';
 
         // Обрабатываем результаты запроса
         while ($row = $result1->fetch_assoc()) {
@@ -64,18 +65,18 @@ if ($result1->num_rows > 0) {
                 $insert_stmt->execute();
                 $insert_stmt->close();
 
-                // Отправляем уведомление на email
-                $mail->addAddress($email);
-                $mail->Body = "Уважаемый сотрудник, у вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
-                $mail->send();
-                $mail->clearAddresses();
+                // Временно не отправляем уведомление
+                // $mail->addAddress($email);
+                // $mail->Body = "Уважаемый сотрудник, у вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
+                // $mail->send();
+                // $mail->clearAddresses();
             }
         }
-    } catch (Exception $e) {
-        echo "Ошибка при отправке письма: {$mail->ErrorInfo}";
-    }
+    //} catch (Exception $e) {
+        //echo "Ошибка при отправке письма: {$mail->ErrorInfo}";
+    //}
 
-    echo "Данные успешно обновлены и уведомления отправлены.";
+    echo "Данные успешно обновлены. Отправка писем отключена.";
 } else {
     echo "Нет студентов с оценкой 2 за неделю.";
 }
