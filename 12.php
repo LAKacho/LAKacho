@@ -36,20 +36,21 @@ if ($result1->num_rows > 0) {
     }
 
     // Инициализируем PHPMailer и настраиваем SMTP (укажите свои реальные SMTP-данные)
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host       = 'ssl://smtp.yandex.ru'; // SMTP сервер
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'your_email@example.com'; // Ваш SMTP логин
-        $mail->Password   = 'your_password';            // Ваш SMTP пароль
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 465;
-        $mail->setFrom('your_email@example.com', 'УЦ АТБ');
-        $mail->Subject    = 'Уведомление о низкой оценке';
-    } catch (Exception $e) {
-        die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
-    }
+    // Код для PHPMailer закомментирован, чтобы отключить отправку сообщений
+    // $mail = new PHPMailer(true);
+    // try {
+    //     $mail->isSMTP();
+    //     $mail->Host       = 'ssl://smtp.yandex.ru'; // SMTP сервер
+    //     $mail->SMTPAuth   = true;
+    //     $mail->Username   = 'your_email@example.com'; // Ваш SMTP логин
+    //     $mail->Password   = 'your_password';            // Ваш SMTP пароль
+    //     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    //     $mail->Port       = 465;
+    //     $mail->setFrom('your_email@example.com', 'УЦ АТБ');
+    //     $mail->Subject    = 'Уведомление о низкой оценке';
+    // } catch (Exception $e) {
+    //     die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
+    // }
 
     // Обрабатываем каждую запись из первого запроса
     while ($row = $result1->fetch_assoc()) {
@@ -81,22 +82,22 @@ if ($result1->num_rows > 0) {
             $insert_stmt->execute();
             $insert_stmt->close();
 
-            // Отправляем уведомление на email
-            try {
-                $mail->addAddress($email);
-                $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
-                $mail->send();
-                $mail->clearAddresses();
-                echo "Письмо успешно отправлено на $email<br>";
-            } catch (Exception $e) {
-                echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
-            }
+            // Здесь отправка уведомлений отключена
+            // try {
+            //     $mail->addAddress($email);
+            //     $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
+            //     $mail->send();
+            //     $mail->clearAddresses();
+            //     echo "Письмо успешно отправлено на $email<br>";
+            // } catch (Exception $e) {
+            //     echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
+            // }
         } else {
             echo "Email для пользователя с login = $login не найден.<br>";
         }
     }
 
-    echo "Данные успешно обновлены и уведомления отправлены.";
+    echo "Данные успешно обновлены, но уведомления не отправляются.";
 } else {
     echo "Нет студентов с оценкой 2 за неделю.";
 }
