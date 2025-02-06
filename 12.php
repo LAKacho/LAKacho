@@ -56,8 +56,8 @@ if ($result1->num_rows > 0) {
     while ($row = $result1->fetch_assoc()) {
         $login = $row['user_login'];
 
-        // Запрос для получения email по user_login (соответствующему полю tb_nomer) из таблицы intern_all базы 1
-        $sql2 = "SELECT email FROM intern_all WHERE tb_nomer = ?";
+        // Запрос для получения email по user_login (соответствующему полю tb) из таблицы list базы 1
+        $sql2 = "SELECT email FROM list WHERE tb = ?";
         $stmt = $conn1->prepare($sql2);
         if (!$stmt) {
             echo "Ошибка подготовки запроса для login = $login: " . $conn1->error;
