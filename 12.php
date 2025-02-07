@@ -1,23 +1,21 @@
 <?php
-// Подключаем автозагрузчик Composer для использования PHPMailer
 require 'vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Подключение к базе данных 1 (куда будут записываться данные и email)
-$conn1 = new mysqli("localhost", "u159215", "", "b159215_intern");
+$conn1 = new mysqli("localhost", "u159215", "", "1test_system");
 if ($conn1->connect_error) {
     die("Ошибка соединения с базой 1: " . $conn1->connect_error);
 }
 
 // Подключение к базе данных 2 (откуда берутся оценки)
-$conn2 = new mysqli("localhost", "u159215", "", "1test_system");
+$conn2 = new mysqli("localhost", "u159215", "", "intern_shB");
 if ($conn2->connect_error) {
     die("Ошибка соединения с базой 2: " . $conn2->connect_error);
 }
 
-// Запрос на выборку пользователей с оценкой 2 за последнюю неделю
 $sql1 = "SELECT user_login
          FROM xtvr_sesions24
          WHERE lesson_name IN (303, 305)
@@ -30,20 +28,17 @@ if (!$result1) {
 }
 
 if ($result1->num_rows > 0) {
-    // Очищаем таблицу 'dva' в базе 1 перед новой записью
     if (!$conn1->query("TRUNCATE TABLE dva")) {
         die("Ошибка очистки таблицы 'dva': " . $conn1->error);
     }
 
-    // Инициализируем PHPMailer и настраиваем SMTP (укажите свои реальные SMTP-данные)
-    // Код для PHPMailer закомментирован, чтобы отключить отправку сообщений
     // $mail = new PHPMailer(true);
     // try {
     //     $mail->isSMTP();
-    //     $mail->Host       = 'ssl://smtp.yandex.ru'; // SMTP сервер
+    //     $mail->Host       = 'ssl://smtp.yandex.ru'; 
     //     $mail->SMTPAuth   = true;
-    //     $mail->Username   = 'your_email@example.com'; // Ваш SMTP логин
-    //     $mail->Password   = 'your_password';            // Ваш SMTP пароль
+    //     $mail->Username   = ''; 
+    //     $mail->Password   = '';           
     //     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     //     $mail->Port       = 465;
     //     $mail->setFrom('your_email@example.com', 'УЦ АТБ');
@@ -52,11 +47,9 @@ if ($result1->num_rows > 0) {
     //     die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
     // }
 
-    // Обрабатываем каждую запись из первого запроса
     while ($row = $result1->fetch_assoc()) {
         $login = $row['user_login'];
 
-        // Запрос для получения email по user_login (соответствующему полю tb) из таблицы list базы 1
         $sql2 = "SELECT email FROM list WHERE tb = ?";
         $stmt = $conn1->prepare($sql2);
         if (!$stmt) {
@@ -70,7 +63,6 @@ if ($result1->num_rows > 0) {
         $stmt->close();
 
         if ($email) {
-            // Записываем информацию в таблицу 'dva'
             $insert_sql = "INSERT INTO dva (login, email, grade) VALUES (?, ?, ?)";
             $insert_stmt = $conn1->prepare($insert_sql);
             if (!$insert_stmt) {
@@ -82,7 +74,6 @@ if ($result1->num_rows > 0) {
             $insert_stmt->execute();
             $insert_stmt->close();
 
-            // Здесь отправка уведомлений отключена
             // try {
             //     $mail->addAddress($email);
             //     $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
@@ -102,7 +93,6 @@ if ($result1->num_rows > 0) {
     echo "Нет студентов с оценкой 2 за неделю.";
 }
 
-// Закрываем подключения
 $conn1->close();
 $conn2->close();
 ?>
