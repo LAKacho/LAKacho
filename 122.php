@@ -16,7 +16,7 @@ if ($conn2->connect_error) {
     die("Ошибка соединения с базой 2: " . $conn2->connect_error);
 }
 
-// Подключение к базе данных 3 (с таблицей rkm)
+// Подключение к базе данных 3 (с таблицами rkm и sess_dpk)
 $conn3 = new mysqli("localhost", "u159215", "", "another_database");
 if ($conn3->connect_error) {
     die("Ошибка соединения с базой 3: " . $conn3->connect_error);
@@ -108,6 +108,52 @@ if ($result3->num_rows > 0) {
             }
             $grade = 2;
             $test_name = "rkm";
+            $insert_stmt->bind_param("ssis", $login, $email, $grade, $test_name);
+            $insert_stmt->execute();
+            $insert_stmt->close();
+
+            echo "Login $login успешно записан в таблицу dva.<br>";
+        } else {
+            echo "Email для пользователя с login = $login не найден.<br>";
+        }
+    }
+}
+
+$sql5 = "SELECT user_login
+         FROM sess_dpk
+         WHERE error2 = 2
+           AND times >= CURDATE() - INTERVAL 7 DAY";
+
+$result5 = $conn3->query($sql5);
+if (!$result5) {
+    die("Ошибка выполнения запроса: " . $conn3->error);
+}
+
+if ($result5->num_rows > 0) {
+    while ($row = $result5->fetch_assoc()) {
+        $login = $row['user_login'];
+
+        $sql6 = "SELECT email FROM list WHERE tb = ?";
+        $stmt = $conn1->prepare($sql6);
+        if (!$stmt) {
+            echo "Ошибка подготовки запроса для login = $login: " . $conn1->error;
+            continue;
+        }
+        $stmt->bind_param("i", $login);
+        $stmt->execute();
+        $stmt->bind_result($email);
+        $stmt->fetch();
+        $stmt->close();
+
+        if ($email) {
+            $insert_sql = "INSERT INTO dva (login, email, grade, test_name) VALUES (?, ?, ?, ?)";
+            $insert_stmt = $conn1->prepare($insert_sql);
+            if (!$insert_stmt) {
+                echo "Ошибка подготовки запроса вставки для login = $login: " . $conn1->error;
+                continue;
+            }
+            $grade = 2;
+            $test_name = "test_dpk";
             $insert_stmt->bind_param("ssis", $login, $email, $grade, $test_name);
             $insert_stmt->execute();
             $insert_stmt->close();
