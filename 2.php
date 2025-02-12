@@ -79,14 +79,18 @@ if ($result1->num_rows > 0) {
     echo "Нет студентов с оценкой «2» за последнюю неделю.";
 }
 
-    $mail = new PHPMailer(true);
+$sql = "SELECT login, email, test_name FROM dva";
+$result = $conn1->query($sql);
 
+if ($result->num_rows > 0) {
+    // Инициализируем PHPMailer и настраиваем SMTP
+    $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
-        $mail->Host       = 'ssl://smtp.yandex.ru'; 
+        $mail->Host       = 'ssl://smtp.yandex.ru'; // SMTP сервер
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'your_email@example.com';
-        $mail->Password   = 'your_password'; 
+        $mail->Username   = 'your_email@example.com'; // Ваш SMTP логин
+        $mail->Password   = 'your_password';          // Ваш SMTP пароль
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 465;
         $mail->setFrom('your_email@example.com', 'УЦ АТБ');
@@ -94,15 +98,32 @@ if ($result1->num_rows > 0) {
     } catch (Exception $e) {
         die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
     }
-             try {
-                $mail->addAddress($email);
-                $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
-                $mail->send();
-                $mail->clearAddresses();
-                echo "Письмо успешно отправлено на $email<br>";
-            } catch (Exception $e) {
-                echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
-            }
+
+    // Проходим по каждому результату и отправляем email
+    while ($row = $result->fetch_assoc()) {
+        $email = $row['email'];
+        $test_name = $row['test_name'];
+
+        try {
+            // Добавляем адрес получателя
+            $mail->addAddress($email);
+            
+            // Формируем тело письма
+            $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за тест: $test_name. Пожалуйста, свяжитесь с вашим руководителем.";
+
+            // Отправляем письмо
+            $mail->send();
+            $mail->clearAddresses(); // Очищаем список адресов для следующего письма
+
+            echo "Письмо успешно отправлено на $email с тестом $test_name<br>";
+        } catch (Exception $e) {
+            echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
+        }
+    }
+} else {
+    echo "Нет данных для отправки уведомлений.";
+}
+
 
 
 $conn1->close();
