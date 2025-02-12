@@ -79,6 +79,32 @@ if ($result1->num_rows > 0) {
     echo "Нет студентов с оценкой «2» за последнюю неделю.";
 }
 
+    $mail = new PHPMailer(true);
+
+    try {
+        $mail->isSMTP();
+        $mail->Host       = 'ssl://smtp.yandex.ru'; 
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'your_email@example.com';
+        $mail->Password   = 'your_password'; 
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 465;
+        $mail->setFrom('your_email@example.com', 'УЦ АТБ');
+        $mail->Subject    = 'Уведомление о низкой оценке';
+    } catch (Exception $e) {
+        die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
+    }
+             try {
+                $mail->addAddress($email);
+                $mail->Body = "Уважаемый сотрудник,\n\nУ вас низкая оценка за последние уроки. Пожалуйста, свяжитесь с вашим руководителем.";
+                $mail->send();
+                $mail->clearAddresses();
+                echo "Письмо успешно отправлено на $email<br>";
+            } catch (Exception $e) {
+                echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
+            }
+
+
 $conn1->close();
 $conn2->close();
 ?>
