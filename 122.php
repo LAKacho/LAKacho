@@ -260,26 +260,54 @@ if ($result7->num_rows > 0) {
         }
     }
 }
+$limit = 190; // Количество писем за один цикл
+$offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0; // Текущая позиция
 
-  $sql11 = "SELECT login, email, test_name FROM dva";
+$sql11 = "SELECT login, email, test_name FROM dva LIMIT $limit OFFSET $offset";
 $result9 = $conn1->query($sql11);
 
 if ($result9->num_rows > 0) {
     $mail = new PHPMailer(true);
     $mail->CharSet = 'UTF-8';
+
+    // Массив настроек для нескольких почтовых аккаунтов
+    $smtpAccounts = [
+        [
+            'host' => 'ssl://smtp.yandex.ru',
+            'username' => 'metyolckin.c@yandex.ru',
+            'password' => 'tcxqiebivfofroup',
+            'from' => 'metyolckin.c@yandex.ru',
+        ],
+        [
+            'host' => 'ssl://smtp.yandex.ru',
+            'username' => 'second_account@yandex.ru',
+            'password' => 'second_password',
+            'from' => 'second_account@yandex.ru',
+        ],
+        // Добавьте столько учетных записей, сколько необходимо
+    ];
+
+    // Определение текущего SMTP аккаунта на основе $offset
+    $currentAccountIndex = floor($offset / 190) % count($smtpAccounts);
+    $currentAccount = $smtpAccounts[$currentAccountIndex];
+
     try {
         $mail->isSMTP();
-        $mail->Host       = 'ssl://smtp.yandex.ru'; 
+        $mail->Host       = $currentAccount['host'];
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'metyolckin.c@yandex.ru'; 
-        $mail->Password   = 'tcxqiebivfofroup';          
+        $mail->Username   = $currentAccount['username']; 
+        $mail->Password   = $currentAccount['password'];          
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 465;
-        $mail->setFrom('metyolckin.c@yandex.ru', 'УЦ АТБ');
+        $mail->setFrom($currentAccount['from'], 'УЦ АТБ');
         $mail->Subject    = 'Уведомление о низкой оценке';
     } catch (Exception $e) {
         die("Ошибка настройки PHPMailer: " . $mail->ErrorInfo);
     }
+
+    $batchSize = 20; // Количество писем за раз
+    $counter = 0;    // Счетчик отправленных писем
+    $batchDelay = 5; // Задержка в секундах между партиями писем
 
     while ($row = $result9->fetch_assoc()) {
         $email = $row['email'];
@@ -288,24 +316,42 @@ if ($result9->num_rows > 0) {
         try {
             $mail->addAddress($email);
             
-            $mail->Body = "Уважаемый сотрудник,\n\nИнформируем Вас, о неудовлетворительном  результате прохождения  тестирования на компьютерном тренажер: $test_name.\n\nС целью подтверждения квалификации необходимо пересдать тест\экзамен  в  учебных классах на производстве или  аудиториях Учебного Центра АТБ.";
+            $mail->Body = "Уважаемый сотрудник,\n\nИнформируем Вас, о неудовлетворительном результате прохождения тестирования на компьютерном тренажере: $test_name.\n\nС целью подтверждения квалификации необходимо пересдать тест/экзамен в учебных классах на производстве или аудиториях Учебного Центра АТБ.";
 
             $mail->send();
             $mail->clearAddresses(); 
 
-            echo "Письмо успешно отправлено на $email с тренажер $test_name<br>";
+            echo "Письмо успешно отправлено на $email с тренажером $test_name<br>";
+            $counter++;
+
+            
+            if ($counter == $batchSize) {
+                echo "Делаем паузу на $batchDelay секунд...<br>";
+                sleep($batchDelay); // Задержка
+                $counter = 0; // Сбрасываем счетчик для новой партии
+            }
+
         } catch (Exception $e) {
             echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
         }
+    }
+
+    echo "Отправлено $limit писем. <br>";
+
+    // Если было отправлено больше 0 писем, создаем ссылку для следующей партии
+    if ($result9->num_rows == $limit) {
+        $nextOffset = $offset + $limit;
+        echo "<a href='?offset=$nextOffset'>Отправить следующие $limit писем</a>";
+    } else {
+        echo "Все письма отправлены.";
     }
 } else {
     echo "Нет данных для отправки уведомлений.";
 }
 
-
-echo "Данные успешно обновлены.";
-
 $conn1->close();
+ 
+
 $conn2->close();
 $conn3->close();
 ?>
