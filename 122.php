@@ -310,7 +310,41 @@ if ($result7->num_rows > 0) {
         }
     }
 }
+// Получение всех данных из таблицы 'dva'
+$sql11 = "SELECT * FROM dva";
+$result11 = $conn1->query($sql11);
 
+if (!$result11) {
+    die("Ошибка выполнения запроса: " . $conn1->error);
+}
+
+// Определение пути для сохранения CSV файла
+$csvFilePath = '/path/to/folder/dva_data.csv';
+
+// Открытие файла для записи
+$file = fopen($csvFilePath, 'w');
+
+if ($file === false) {
+    die("Не удалось создать CSV файл.");
+}
+
+// Записываем заголовки в CSV файл (замените на реальные имена полей)
+fputcsv($file, ['login', 'email', 'garade', 'test_name']);
+
+// Записываем строки данных из таблицы 'dva'
+while ($row = $result11->fetch_assoc()) {
+    fputcsv($file, $row);
+}
+
+// Закрытие файла
+fclose($file);
+
+echo "CSV файл успешно создан и сохранен по пути: $csvFilePath.<br>";
+
+// Закрытие соединений с базой данных
+$conn1->close();
+$conn2->close();
+$conn3->close();
 
 $conn1->close();
 $conn2->close();
