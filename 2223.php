@@ -9,6 +9,8 @@ if ($conn1->connect_error) {
     die("Ошибка соединения с базой 1: " . $conn1->connect_error);
 }
 
+$conn1->set_charset("utf8"); // Установка кодировки UTF-8 для подключения к базе данных
+
 $limit = 190; 
 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0; 
 
@@ -17,9 +19,8 @@ $result9 = $conn1->query($sql11);
 
 if ($result9->num_rows > 0) {
     $mail = new PHPMailer(true);
-    $mail->CharSet = 'UTF-8';
+    $mail->CharSet = 'UTF-8'; // Установка кодировки UTF-8 для PHPMailer
 
-  
     $smtpAccounts = [
         [
             'host' => 'ssl://smtp.yandex.ru',
@@ -33,10 +34,8 @@ if ($result9->num_rows > 0) {
             'password' => 'YN48qMc1',
             'from' => 'admin@educationalcenter.aeromash.ru',
         ],
-       
     ];
 
-  
     $currentAccountIndex = floor($offset / 190) % count($smtpAccounts);
     $currentAccount = $smtpAccounts[$currentAccountIndex];
 
@@ -64,29 +63,24 @@ if ($result9->num_rows > 0) {
 
         try {
             $mail->addAddress($email);
-            
             $mail->Body = "Уважаемый сотрудник,\n\nИнформируем Вас, о неудовлетворительном результате прохождения тестирования на компьютерном тренажере: $test_name.\n\nС целью подтверждения квалификации необходимо пересдать тест/экзамен в учебных классах на производстве или аудиториях Учебного Центра АТБ.";
-
             $mail->send();
-            $mail->clearAddresses(); 
+            $mail->clearAddresses();
 
             echo "Письмо успешно отправлено на $email с тренажером $test_name<br>";
             $counter++;
 
-            
             if ($counter == $batchSize) {
                 echo "Делаем паузу на $batchDelay секунд...<br>";
                 sleep($batchDelay); 
                 $counter = 0; 
             }
-
         } catch (Exception $e) {
             echo "Ошибка при отправке письма на $email: " . $mail->ErrorInfo . "<br>";
         }
     }
 
     echo "Отправлено $limit писем. <br>";
-
 
     if ($result9->num_rows == $limit) {
         $nextOffset = $offset + $limit;
@@ -99,3 +93,4 @@ if ($result9->num_rows > 0) {
 }
 
 $conn1->close();
+?>
